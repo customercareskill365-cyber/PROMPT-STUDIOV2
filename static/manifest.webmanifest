@@ -1,0 +1,18 @@
+{
+  "name": "Prompt Studio — AI Video Shot Library",
+  "short_name": "Prompt Studio",
+  "description": "Organize 6-10 minute AI video prompt sequences from Excel or Word, copy prompts, and track shot progress offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0c0c",
+  "theme_color": "#0f0c0c",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23171212'/%3E%3Cpath d='M96 36 L168 120 Q96 144 24 120 Z' fill='%23B82525' stroke='%23FAF7F2' stroke-width='8' stroke-linejoin='round'/%3E%3Cpath d='M48 96 Q96 114 144 96' fill='none' stroke='%23E5A93C' stroke-width='7'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

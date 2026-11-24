@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0e14" />
+  <title>Prompt Studio — AI Video Shot Library &amp; Production Tracker</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0E14'/%3E%3Cpath d='M32 12 L56 40 Q32 48 8 40 Z' fill='%23B82525' stroke='%23FAF7F2' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M16 32 Q32 38 48 32' fill='none' stroke='%23E5A93C' stroke-width='2.5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="brandBtn" class="brand-btn" title="Go to Project Library">
+          <span class="brand-emblem" aria-hidden="true">
+            <svg viewBox="0 0 36 32" width="34" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1.5" y="1.5" width="33" height="29" rx="7" fill="#121722" stroke="#B82525" stroke-width="1.3"/>
+              <path d="M18 6.5 L30.5 20.5 Q18 25 5.5 20.5 Z" fill="#1B2234" stroke="#FAF7F2" stroke-width="1.35" stroke-linejoin="round"/>
+              <path d="M18 6.5 L11.8 21.8 M18 6.5 L18 22.8 M18 6.5 L24.2 21.8" stroke="#E5A93C" stroke-width="0.9" opacity="0.85"/>
+              <path d="M10.4 15.8 Q18 18.8 25.6 15.8" stroke="#D92D2D" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M18 15.4 L19.6 17 L18 18.6 L16.4 17 Z" fill="#FAF7F2"/>
+              <circle cx="18" cy="6.5" r="1.4" fill="#E5A93C"/>
+              <path d="M10.5 25.5 H13 M16.75 26 H19.25 M23 25.5 H25.5" stroke="#B82525" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <strong>Prompt Studio</strong>
+            <small>AI Video Shot Library</small>
+          </span>
+        </button>
+        <button id="btnTopLibrary" class="btn btn-secondary btn-sm" title="View all saved projects in Library">
+          📚 All Projects (<span id="topProjectCount">0</span>)
+        </button>
+        <select id="quickProjectSwitcher" class="select-input quick-switcher" title="Quickly switch between active client projects">
+          <option value="">⚡ Switch Project...</option>
+        </select>
+        <div id="saveSyncIndicator" class="sync-pill sync-ok" title="Saved locally to disk and browser backup">
+          <span class="sync-dot"></span>
+          <span id="saveSyncLabel">Saved to Disk</span>
+        </div>
+        <button id="btnThemeToggle" type="button" class="btn btn-ghost btn-xs theme-toggle-btn" title="Switch Dark / Light mode">
+          ☀️ Light
+        </button>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btnOpenUpload" class="btn btn-primary">
+          <span>⬆</span> Upload Excel / Word
+        </button>
+        <button id="btnOpenPaste" class="btn btn-secondary">
+          <span>📋</span> Smart Paste
+        </button>
+        <button id="btnNewBlank" class="btn btn-ghost">
+          <span>＋</span> New Project
+        </button>
+        <div class="divider-v"></div>
+        <button id="btnExportBackup" class="btn btn-ghost btn-sm" title="Download full library JSON backup">
+          💾 Backup
+        </button>
+        <label class="btn btn-ghost btn-sm file-label" title="Restore library from JSON backup">
+          📂 Restore
+          <input type="file" id="inputRestoreBackup" accept=".json" hidden />
+        </label>
+      </div>
+    </header>
+
+    <!-- Main View: LIBRARY -->
+    <main id="libraryView" class="view active">
+      <section class="library-hero">
+        <div>
+          <h1>Your Creative Video Prompt Library</h1>
+          <p class="subtitle">
+            Organize 6–10 minute AI video pipelines shot by shot, track copied vs. completed renders, and resume right where you left off.
+          </p>
+        </div>
+        <div class="stats-strip" id="libraryStats"></div>
+      </section>
+
+      <section class="library-controls">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="libSearch" type="search" placeholder="Search video name, topic, AI model, or shot prompt..." />
+        </div>
+        <div class="filter-tabs" id="libStatusTabs">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="in_progress">In Progress</button>
+          <button class="pill" data-filter="not_started">Not Started</button>
+          <button class="pill" data-filter="completed">Completed</button>
+        </div>
+        <select id="libTopicFilter" class="select-input" title="Filter by Topic">
+          <option value="all">All Topics</option>
+        </select>
+        <select id="libSort" class="select-input" title="Sort Projects">
+          <option value="updated">Sort: Last Worked On</option>
+          <option value="progress">Sort: Progress %</option>
+          <option value="name">Sort: Video Name (A–Z)</option>
+          <option value="shots">Sort: Most Shots</option>
+        </select>
+      </section>
+
+      <section id="projectGrid" class="project-grid"></section>
+      <div id="libraryEmpty" class="empty-state hidden">
+        <div class="empty-icon">🎞️</div>
+        <h2>No matching projects yet</h2>
+        <p>Upload an Excel (.xlsx) or Word (.docx) shot sheet, paste prompts from ChatGPT/Claude/Gemini, or create a blank video project.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="btnEmptyUpload">⬆ Upload .xlsx / .docx</button>
+          <button class="btn btn-secondary" id="btnEmptyPaste">📋 Smart Paste Prompts</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Main View: WORKSPACE -->
+    <main id="workspaceView" class="view">
+      <div class="workspace-nav">
+        <button id="btnBackToLibrary" class="btn btn-ghost btn-sm">← Back to Library</button>
+        <div class="workspace-nav-right">
+          <div class="export-dropdown">
+            <button id="btnDownloadTemplate" class="btn btn-ghost btn-sm" title="Export this project">
+              ⬇ Export Shots
+            </button>
+            <div id="exportMenu" class="dropdown-menu hidden">
+              <button data-export="xlsx">Export as Excel (.xlsx)</button>
+              <button data-export="csv">Export as CSV (.csv)</button>
+              <button data-export="txt">Export as Script/Prompts (.txt)</button>
+              <button data-export="json">Export as Project JSON (.json)</button>
+            </div>
+          </div>
+          <button id="btnAppendImport" class="btn btn-ghost btn-sm" title="Import additional shots into this project">
+            ＋ Import More Shots
+          </button>
+          <button id="btnAddShotTop" class="btn btn-secondary btn-sm">
+            ＋ Add Shot
+          </button>
+        </div>
+      </div>
+
+      <!-- Project Metadata & Calculator Header -->
+      <section class="project-header-card">
+        <div class="project-meta-main">
+          <div class="meta-row-top">
+            <input id="wsVideoName" class="editable-title" type="text" placeholder="Video Name / Title..." />
+          </div>
+          <div class="meta-row-fields">
+            <label class="meta-field">
+              <span>Topic</span>
+              <input id="wsTopic" type="text" placeholder="e.g. Sci-Fi Documentary" />
+            </label>
+            <label class="meta-field">
+              <span>AI Model</span>
+              <input id="wsAiModel" type="text" list="aiModelSuggestions" placeholder="e.g. Kling 1.6 / Runway / Veo" />
+            </label>
+            <label class="meta-field meta-field-sm">
+              <span>Target Runtime</span>
+              <input id="wsTargetDuration" type="text" placeholder="e.g. 8:00" />
+            </label>
+            <label class="meta-field meta-field-sm">
+              <span>Default Shot Sec</span>
+              <input id="wsDefaultSec" type="number" min="1" max="60" value="6" />
+            </label>
+          </div>
+        </div>
+
+        <div class="project-metrics-panel">
+          <div class="metric-box">
+            <span class="metric-label">Completion</span>
+            <strong id="wsProgressText" class="metric-value">0 / 0 (0%)</strong>
+            <div class="progress-track">
+              <div id="wsProgressBar" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div id="wsBreakdownText" class="metric-sub">0 Copied · 0 Pending</div>
+          </div>
+          <div class="metric-box">
+            <span class="metric-label">Calculated Video Runtime</span>
+            <strong id="wsRuntimeValue" class="metric-value">00m 00s</strong>
+            <div id="wsRuntimeTargetHint" class="metric-sub">Target: —</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Production Toolbar -->
+      <section class="production-toolbar">
+        <div class="toolbar-group">
+          <button id="btnJumpNext" class="btn btn-primary btn-sm">
+            🎯 Jump to Next Incomplete
+          </button>
+          <button id="btnRapidCopyNext" class="btn btn-accent btn-sm" title="Copy the next incomplete shot prompt and advance to the following shot">
+            ⚡ Rapid Copy &amp; Next
+          </button>
+        </div>
+
+        <div class="toolbar-group">
+          <label class="toggle-chip" title="When enabled, clicking Copy Prompt also checks the Completed checkbox automatically">
+            <input id="toggleAutoComplete" type="checkbox" />
+            <span class="toggle-slider"></span>
+            <span>Auto-Complete on Copy</span>
+          </label>
+          <button id="btnToggleGlobalStyle" class="btn btn-ghost btn-sm">
+            ✨ Global Style Prefix/Suffix <span id="globalStyleBadge" class="badge-mini hidden">ON</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Collapsible Global Style Prefix/Suffix Drawer -->
+      <section id="globalStyleDrawer" class="global-style-drawer hidden">
+        <div class="drawer-header">
+          <label class="toggle-chip">
+            <input id="wsUseGlobalStyle" type="checkbox" />
+            <span class="toggle-slider"></span>
+            <span>Automatically prepend/append global style to every copied Video Prompt</span>
+          </label>
+          <span class="drawer-hint">Great for keeping consistent aspect ratio, lens, or style across 60+ shots.</span>
+        </div>
+        <div class="drawer-inputs">
+          <label>
+            <span>Style Prefix (added before prompt)</span>
+            <input id="wsStylePrefix" type="text" placeholder="e.g. Cinematic 4k documentary film," />
+          </label>
+          <label>
+            <span>Style Suffix (added after prompt)</span>
+            <input id="wsStyleSuffix" type="text" placeholder="e.g. --ar 16:9, photorealistic, 35mm anamorphic" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Shot Filter Strip -->
+      <section class="shot-filter-strip">
+        <div class="filter-tabs" id="wsShotFilterTabs">
+          <button class="pill active" data-shot-filter="all">All Shots (<span id="countAll">0</span>)</button>
+          <button class="pill" data-shot-filter="pending">Pending (<span id="countPending">0</span>)</button>
+          <button class="pill" data-shot-filter="copied">Copied / In-Flight (<span id="countCopied">0</span>)</button>
+          <button class="pill" data-shot-filter="completed">Completed (<span id="countCompleted">0</span>)</button>
+        </div>
+        <div class="shot-search-right">
+          <input id="wsShotSearch" type="search" placeholder="Filter shots by title, prompt, or script..." />
+          <button id="btnRenumberShots" class="btn btn-ghost btn-sm" title="Re-sequence shots strictly as 1, 2, 3...">🔢 Re-sequence 1..N</button>
+        </div>
+      </section>
+
+      <!-- Shot Cards List -->
+      <section id="shotList" class="shot-list"></section>
+
+      <div class="workspace-bottom-add">
+        <button id="btnAddShotBottom" class="btn btn-secondary">+ Add New Shot at End</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: Upload / Smart Paste & Interactive Preview -->
+  <div id="importModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-xl">
+      <div class="modal-header">
+        <div>
+          <h2 id="importModalTitle">Import Video Prompts</h2>
+          <p class="modal-subtitle">Upload Excel (.xlsx), Word (.docx), CSV, or TXT — or paste raw prompts from any AI model.</p>
+        </div>
+        <button id="btnCloseImport" class="icon-btn" title="Close">✕</button>
+      </div>
+
+      <!-- Step 1: Source Input -->
+      <div id="importStepInput" class="modal-body">
+        <div class="import-mode-tabs">
+          <button id="tabModeFile" class="tab-btn active">📄 Upload File (.xlsx / .docx / .csv / .txt)</button>
+          <button id="tabModePaste" class="tab-btn">📋 Smart Paste Raw Prompts</button>
+        </div>
+
+        <div id="panelFileUpload" class="import-panel">
+          <div id="dropZone" class="drop-zone">
+            <div class="drop-icon">📂</div>
+            <h3>Drag &amp; drop your Excel or Word prompt file here</h3>
+            <p>Supports <code>.xlsx</code>, <code>.docx</code>, <code>.csv</code>, and <code>.txt</code></p>
+            <label class="btn btn-primary">
+              Choose File from Computer
+              <input type="file" id="importFileInput" accept=".xlsx,.docx,.csv,.txt" hidden />
+            </label>
+            <div class="sample-links">
+              <span>Want to try with a sample file?</span>
+              <button type="button" class="link-btn" id="btnLoadSampleXlsx">Load Sample Excel (.xlsx)</button>
+              <span>·</span>
+              <button type="button" class="link-btn" id="btnLoadSampleDocx">Load Sample Word (.docx)</button>
+              <span>·</span>
+              <a href="samples/cyberpunk-documentary-shots.xlsx" download>Download .xlsx</a>
+              <span>·</span>
+              <a href="samples/ancient-india-story-shots.docx" download>Download .docx</a>
+            </div>
+          </div>
+        </div>
+
+        <div id="panelRawPaste" class="import-panel hidden">
+          <p class="paste-tip">
+            Paste your full shot list below (numbered shots like <code>Shot 1:</code>, <code>1.</code>, <code>Scene 1</code>, or tab-separated rows copied from Google Sheets / Excel). We will automatically extract Video Name, Topic, Sequence #, and Prompt fields.
+          </p>
+          <textarea id="rawPasteTextarea" rows="12" placeholder="Video Name: The Lost Temple of Assam&#10;Topic: Historical Mystery&#10;&#10;Shot 1: Aerial Forest Canopy&#10;Duration: 8s&#10;Script: Deep inside the eastern valley...&#10;Image Prompt: Ancient stone ruin overgrown with banyan roots...&#10;Video Prompt: Slow sweeping drone descending through mist toward stone temple spire...&#10;&#10;Shot 2: Torchlit Corridor&#10;Video Prompt: Smooth forward gimbal glide down moss-covered stone hallway..."></textarea>
+          <div class="paste-actions">
+            <button id="btnParsePastedText" class="btn btn-primary">✨ Analyze &amp; Preview Shots</button>
+          </div>
+        </div>
+
+        <div id="importErrorBox" class="alert-error hidden"></div>
+      </div>
+
+      <!-- Step 2: Interactive Preview & Column Mapper -->
+      <div id="importStepPreview" class="modal-body hidden">
+        <div class="preview-meta-grid">
+          <label>
+            <span>Video Name *</span>
+            <input id="prevVideoName" type="text" placeholder="Enter Video Name" />
+          </label>
+          <label>
+            <span>Topic / Category</span>
+            <input id="prevTopic" type="text" placeholder="e.g. AI Documentary, Sci-Fi Short" />
+          </label>
+          <label>
+            <span>AI Model</span>
+            <input id="prevAiModel" type="text" list="aiModelSuggestions" placeholder="e.g. Kling 1.6 Pro" />
+          </label>
+          <label>
+            <span>Target Duration</span>
+            <input id="prevTargetDuration" type="text" placeholder="e.g. 8:00" />
+          </label>
+        </div>
+
+        <!-- Column Mapper (only shown for tabular imports) -->
+        <div id="columnMapperBar" class="column-mapper hidden">
+          <div class="mapper-title">
+            <strong>Detected Table Columns</strong>
+            <small>Adjust any mapping below and the shot preview updates immediately:</small>
+          </div>
+          <div class="mapper-grid" id="mapperDropdowns"></div>
+        </div>
+
+        <div class="preview-table-header">
+          <strong id="prevShotCountLabel">Detected 0 Shots</strong>
+          <div class="preview-table-actions">
+            <button id="btnPrevBack" class="btn btn-ghost btn-sm">← Choose Another File</button>
+            <button id="btnPrevAddRow" class="btn btn-ghost btn-sm">＋ Add Row</button>
+          </div>
+        </div>
+
+        <div class="preview-table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Seq #</th>
+                <th style="width: 170px;">Scene / Title</th>
+                <th style="width: 75px;">Dur</th>
+                <th>Video Prompt</th>
+                <th>Image / First-Frame Prompt</th>
+                <th>Script / VO</th>
+                <th>Notes</th>
+                <th style="width: 44px;"></th>
+              </tr>
+            </thead>
+            <tbody id="previewTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <div class="footer-note" id="previewFooterNote"></div>
+          <div class="footer-btns">
+            <button id="btnCancelImport" class="btn btn-ghost">Cancel</button>
+            <button id="btnConfirmImport" class="btn btn-primary">✓ Save Project to Library &amp; Open</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: New Blank Project -->
+  <div id="blankModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>New Video Project</h2>
+        <button id="btnCloseBlank" class="icon-btn">✕</button>
+      </div>
+      <form id="blankProjectForm" class="modal-body form-stack">
+        <label>
+          <span>Video Name *</span>
+          <input id="blankVideoName" type="text" required placeholder="e.g. Ancient Mystery Part 2" />
+        </label>
+        <label>
+          <span>Topic</span>
+          <input id="blankTopic" type="text" placeholder="e.g. History Documentary" />
+        </label>
+        <label>
+          <span>Primary AI Video Model</span>
+          <input id="blankAiModel" type="text" list="aiModelSuggestions" placeholder="e.g. Kling 1.6 Pro, Veo 2, Runway Gen-3" />
+        </label>
+        <div class="two-col">
+          <label>
+            <span>Target Video Length</span>
+            <input id="blankTargetDuration" type="text" value="8:00" placeholder="e.g. 8:00" />
+          </label>
+          <label>
+            <span>Initial Empty Shots</span>
+            <input id="blankShotCount" type="number" min="1" max="150" value="5" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btnCancelBlank" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <datalist id="aiModelSuggestions">
+    <option value="Kling 1.6 Pro"></option>
+    <option value="Runway Gen-3 Alpha"></option>
+    <option value="Google Veo 2"></option>
+    <option value="OpenAI Sora"></option>
+    <option value="Hailuo MiniMax"></option>
+    <option value="Luma Dream Machine"></option>
+    <option value="Midjourney + Kling"></option>
+    <option value="Pika 2.0"></option>
+    <option value="Wan 2.1"></option>
+  </datalist>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
